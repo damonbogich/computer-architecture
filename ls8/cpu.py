@@ -7,7 +7,12 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = [0] * 256
+        self.reg = [0] * 8 
+        self.pc = 0
+        self.HLT = 0b00000001
+        self.LDI = 0b10000010
+        self.PRN = 0b01000111
 
     def load(self):
         """Load a program into memory."""
@@ -59,7 +64,46 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
+    
 
+
+    #Memory Address Register (MAR) - contains the address that is being read or written to
+    #Memory Data Register (MDR) - contains the data that was read or the data to write
+    def ram_read(self, MAR):
+        #should accept the address to read and return the value stored there.
+        MDR = self.ram[MAR]
+        return MDR
+    
+    def ram_write(self, MDR, MAR):
+        # should accept a value to write, and the address to write it to.
+        self.ram[MAR] = MDR
+    
     def run(self):
-        """Run the CPU."""
-        pass
+        """
+        1. It needs to read the memory address that's stored in register PC, and store that result in IR, the Instruction Register. This can just be a local variable in run().
+        
+        2. Some instructions requires up to the next two bytes of data after the PC in memory to perform operations on. Sometimes the byte value is a register number, other times it's a constant value (in the case of LDI). Using ram_read(), read the bytes at PC+1 and PC+2 from RAM into variables operand_a and operand_b in case the instruction needs them.
+        """
+
+        running = True
+        while running:
+            IR = self.ram[self.pc]
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+
+            if IR == self.LDI:
+                #set value of register to an integer
+                self.reg[operand_a] = operand_b
+                self.pc += 3
+            
+            elif IR == self.PRN:
+                #Print numeric value stored in the given register.
+                value = self.reg[operand_a]
+                print(value)
+                self.pc += 2
+
+            elif IR == self.HLT:
+                running = False
+                
+        
+        
