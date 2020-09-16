@@ -1,10 +1,25 @@
-memory = [
-    1, #print Beej  ##address 0
-    3, #SAVE_REG R1,37
-    1,
-    37,
-    2  #Halt
-]
+import sys
+"""
+Change memory from being hardcoded to being read from outside files
+1. get file path from command line
+2. ignore blank lines, comments, whitespace
+3. splitting input file line by line
+4. Turn the program from the file into instructions (str -> int)
+"""
+
+memory = [0] * 256 #this will get loaded with numbers (instructions) from an outside file
+
+with open(sys.argv[1]) as f:
+    for line in f:
+        t = line.split('#')
+        n = t[0].strip()
+
+        if n == '':
+            continue
+        n = int(n)
+        print(repr(n))
+
+sys.exit()
 
 registers = [0] * 8 #R0 - R7
 

@@ -3,9 +3,11 @@
 """Main."""
 
 import sys
-from cpu import *
+# from cpu_tues import *
+from cpu import * 
 
 cpu = CPU()
 
-cpu.load()
+# cpu.load(sys.argv[1]) #tues
+cpu.load() #mon
 cpu.run()
