@@ -132,26 +132,20 @@ class CPU:
             operand_b = self.ram_read(self.pc + 2)
 
             if IR == self.LDI:
-                #set value of register to an integer
-                # print('LDI')
-                # self.reg[operand_a] = operand_b
-                # self.pc += 3
                 self.ldi(operand_a, operand_b)
             
             elif IR == self.PRN:
-                #Print numeric value stored in the given register.
-                # print("PRN")
-                # value = self.reg[operand_a]
-                # print(value)
-                # self.pc += 2
                 self.prn(operand_a)
+                
             elif IR == self.MUL:
-                # print('MUL')
                 self.alu("MUL", operand_a, operand_b)
                 self.pc += 3
+
             elif IR == self.PUSH:
                 self.push(operand_a)
+
             elif IR == self.POP:
                 self.pop(operand_a)
+                
             elif IR == self.HLT:
                 running = False
