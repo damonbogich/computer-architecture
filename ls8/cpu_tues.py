@@ -1,6 +1,12 @@
 """CPU functionality."""
 
 import sys
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
+MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 class CPU:
     """Main CPU class."""
@@ -12,12 +18,15 @@ class CPU:
         self.pc = 0
         self.stack_pointer = self.reg[7]
         self.reg[7] = self.ram[0xf4]
-        self.HLT = 0b00000001
-        self.LDI = 0b10000010
-        self.PRN = 0b01000111
-        self.MUL = 0b10100010
-        self.PUSH = 0b01000101
-        self.POP = 0b01000110
+        self.branchtable = {}
+        # self.branchtable[HLT] = self.hlt
+        self.branchtable[LDI] = self.ldi
+        self.branchtable[PRN] = self.prn
+        self.branchtable[MUL] = self.mul
+        self.branchtable[PUSH] = self.push
+        self.branchtable[POP] = self.pop
+        
+        
 
     def load(self, file_name):
         """Load a program into memory."""
@@ -46,7 +55,9 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
             #multiply the two registers together and store the answer in rega
+            print('mulllll')
             self.reg[reg_a] *= self.reg[reg_b]
+            self.pc += 3
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -70,7 +81,7 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
-    def push(self, register):
+    def push(self, register, operand_b):
         #decrement stack pointer
         self.stack_pointer -= 1
         #Copy the value in the given register to the address pointed to by SP.
@@ -80,7 +91,7 @@ class CPU:
         self.ram[self.stack_pointer] = value
 
         self.pc += 2
-    def pop(self, register):
+    def pop(self, register, operand_b):
         ##Pop the value at the top of the stack into the given register.
 
         # Copy the value from the address pointed to by SP to the given register.
@@ -97,14 +108,16 @@ class CPU:
         self.reg[register] = integer
         self.pc += 3
 
-    def prn(self, register):
+    def prn(self, register, operand_b):
         print(self.reg[register])
         self.pc += 2
     
-
-
-
+    def mul(self, register_a, register_b):
+        self.alu('MUL', register_a, register_b)
     
+    
+    
+
 
 
     #Memory Address Register (MAR) - contains the address that is being read or written to
@@ -131,21 +144,9 @@ class CPU:
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
-            if IR == self.LDI:
-                self.ldi(operand_a, operand_b)
-            
-            elif IR == self.PRN:
-                self.prn(operand_a)
-                
-            elif IR == self.MUL:
-                self.alu("MUL", operand_a, operand_b)
-                self.pc += 3
-
-            elif IR == self.PUSH:
-                self.push(operand_a)
-
-            elif IR == self.POP:
-                self.pop(operand_a)
-                
-            elif IR == self.HLT:
+            if IR in self.branchtable:
+                self.branchtable[IR](operand_a, operand_b)
+            elif IR == HLT:
                 running = False
+            else:
+                print('error, that operation is not here')
