@@ -23,6 +23,9 @@ sys.exit()
 
 registers = [0] * 8 #R0 - R7
 
+sp = 7
+registers[sp] = 0xf4
+
 
 #"Variables" in hardware.  Known as registers
 #They are a fixed number of registers
@@ -50,6 +53,33 @@ while running:
         print(registers)
         pc += 3
 
+    elif ir == 4: ## push
+        #decrement sp
+        registers[sp] -= 1
+
+        #get register number to push
+        reg_num = memory[pc + 1] ###operand
+
+        #get value to push
+        value = registers[reg_num]
+
+        #copy the value of the sp address
+        top_of_stack_address = registers[7]
+        memory[top_of_stack_address] = value
+    elif ir ==5: ##pop
+        #get register number
+        reg_num = memory[pc + 1]
+
+        #get top of stack address
+        top_of_stack_address = registers[sp]
+
+        #get value from the top of the stack
+        value = memory[top_of_stack_address]
+
+        #store the value in the register
+        registers[reg_num] = value
+
+        pc += 2
 
     else:
         print(f"Unknown instruction {ir}")

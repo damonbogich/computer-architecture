@@ -10,10 +10,14 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8 
         self.pc = 0
+        self.stack_pointer = self.reg[7]
+        self.reg[7] = self.ram[0xf4]
         self.HLT = 0b00000001
         self.LDI = 0b10000010
         self.PRN = 0b01000111
         self.MUL = 0b10100010
+        self.PUSH = 0b01000101
+        self.POP = 0b01000110
 
     def load(self, file_name):
         """Load a program into memory."""
@@ -66,6 +70,40 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
+    def push(self, register):
+        #decrement stack pointer
+        self.stack_pointer -= 1
+        #Copy the value in the given register to the address pointed to by SP.
+        #value
+        value = self.reg[register]
+        #copy value to the where stack pointer is pointing
+        self.ram[self.stack_pointer] = value
+
+        self.pc += 2
+    def pop(self, register):
+        ##Pop the value at the top of the stack into the given register.
+
+        # Copy the value from the address pointed to by SP to the given register.
+        # Increment SP.
+        value = self.ram[self.stack_pointer]
+        
+        self.reg[register] = value
+
+        self.stack_pointer += 1
+
+        self.pc += 2
+
+    def ldi(self, register, integer):
+        self.reg[register] = integer
+        self.pc += 3
+
+    def prn(self, register):
+        print(self.reg[register])
+        self.pc += 2
+    
+
+
+
     
 
 
@@ -96,20 +134,24 @@ class CPU:
             if IR == self.LDI:
                 #set value of register to an integer
                 # print('LDI')
-                self.reg[operand_a] = operand_b
-                self.pc += 3
+                # self.reg[operand_a] = operand_b
+                # self.pc += 3
+                self.ldi(operand_a, operand_b)
             
             elif IR == self.PRN:
                 #Print numeric value stored in the given register.
                 # print("PRN")
-                value = self.reg[operand_a]
-                print(value)
-                self.pc += 2
+                # value = self.reg[operand_a]
+                # print(value)
+                # self.pc += 2
+                self.prn(operand_a)
             elif IR == self.MUL:
                 # print('MUL')
                 self.alu("MUL", operand_a, operand_b)
                 self.pc += 3
-
+            elif IR == self.PUSH:
+                self.push(operand_a)
+            elif IR == self.POP:
+                self.pop(operand_a)
             elif IR == self.HLT:
-                # print('HLT')
                 running = False
