@@ -1,85 +1,114 @@
 import sys
 """
-Change memory from being hardcoded to being read from outside files
-1. get file path from command line
-2. ignore blank lines, comments, whitespace
-3. splitting input file line by line
-4. Turn the program from the file into instructions (str -> int)
+Get the file path from the command line
+Sanitize the data from that file
+    Ignore blank lines, whitespace, comments
+    Splitting the input file per line
+    Turn into program instructions (str->int)
 """
-
-memory = [0] * 256 #this will get loaded with numbers (instructions) from an outside file
-
-with open(sys.argv[1]) as f:
-    for line in f:
-        t = line.split('#')
-        n = t[0].strip()
-
-        if n == '':
-            continue
-        n = int(n)
-        print(repr(n))
-
-sys.exit()
-
-registers = [0] * 8 #R0 - R7
-
-sp = 7
-registers[sp] = 0xf4
-
-
-#"Variables" in hardware.  Known as registers
-#They are a fixed number of registers
-#They have fixed names
-# R0, R1, R2, ... R7, R8
-
-pc = 0 #Program counter - address of the currently executing instruction
-
+# These all mean the same thing:
+#   Index into the memory array
+#   Address
+#   Location
+#   Pointer
+memory = [0] * 256  # RAM
+registers = [0] * 8  # R0-R7
+if len(sys.argv) != 2:
+    print("usage: comp.py filename")
+    sys.exit(1)
+try:
+    address = 0
+    with open(sys.argv[1]) as f:
+        for line in f:
+            t = line.split('#')
+            n = t[0].strip()
+            if n == '':
+                continue
+            try:
+                n = int(n)
+            except ValueError:
+                print(f"Invalid number '{n}'")
+                sys.exit(1)
+            memory[address] = n
+            address += 1
+except FileNotFoundError:
+    print(f"File not found: {sys.argv[1]}")
+    sys.exit(2)
+# "Variables" in hardware. Known as "registers".
+# There are a fixed number of registers
+# They have fixed names
+#  R0, R1, R2, ... , R6, R7
+pc = 0  # Program Counter, address of the currently-executing instuction
+SP = 7
+PRINT_BEEJ = 1
+HALT = 2
+SAVE_REG = 3
+PRINT_REG = 4
+PUSH = 5
+POP = 6
+CALL = 7
+RET = 8
+registers[SP] = 0xF4  # Init SP
+def push_value(value):
+    # Decrement SP
+    registers[SP] -= 1
+    # Copy the value to the SP address
+    top_of_stack_addr = registers[SP]
+    memory[top_of_stack_addr] = value
+def pop_value():
+    # Get the top of stack addr
+    top_of_stack_addr = registers[SP]
+    # Get the value at the top of the stack
+    value = memory[top_of_stack_addr]
+    # Increment the SP
+    registers[SP] += 1
+    return value
 running = True
-
 while running:
-    ir = memory[pc] #Instruction register - copy of currently executing instruction
-
-    if ir == 1:
-        print('Beej')
+    ir = memory[pc]  # Instruction Register, copy of the currently-executing instruction
+    if ir == PRINT_BEEJ:
+        print("Beej!")
         pc += 1
-
-    elif ir == 2:
-        break
-
-    elif ir == 3: 
+    elif ir == HALT:
+        running = False
+    elif ir == SAVE_REG: # (LDI on the LS8)
         reg_num = memory[pc + 1]
         value = memory[pc + 2]
         registers[reg_num] = value
-        print(registers)
         pc += 3
-
-    elif ir == 4: ## push
-        #decrement sp
-        registers[sp] -= 1
-
-        #get register number to push
-        reg_num = memory[pc + 1] ###operand
-
-        #get value to push
-        value = registers[reg_num]
-
-        #copy the value of the sp address
-        top_of_stack_address = registers[7]
-        memory[top_of_stack_address] = value
-    elif ir ==5: ##pop
-        #get register number
+    elif ir == PRINT_REG:
         reg_num = memory[pc + 1]
-
-        #get top of stack address
-        top_of_stack_address = registers[sp]
-
-        #get value from the top of the stack
-        value = memory[top_of_stack_address]
-
-        #store the value in the register
-        registers[reg_num] = value
-
+        print(registers[reg_num])
         pc += 2
-
+    elif ir == PUSH:
+        # Get the reg num to push
+        reg_num = memory[pc + 1]
+        # Get the value to push
+        value = registers[reg_num]
+        push_value(value)
+        #print(memory[0xea:0xf4])
+        pc += 2
+    elif ir == POP:
+        # Get reg to pop into
+        reg_num = memory[pc + 1]
+        # Get the value at the top of the stack
+        value = pop_value()
+        # Store the value in the register
+        registers[reg_num] = value
+        pc += 2
+    elif ir == CALL:
+        # Compute the return addr
+        return_addr = pc + 2
+        # Push return addr on stack
+        push_value(return_addr)
+        # Get the value from the operand reg
+        # Set the pc to that value
     else:
         print(f"Unknown instruction {ir}")
+        sys.exit(3)
+    """
+    # For the LS-8 to move the PC
+    number_of_operands = (ir & 0b11000000) >> 6
+    how_far_to_move_pc = number_of_operands + 1
+    pc += how_far_to_move_pc
+    """
