@@ -10,6 +10,10 @@ POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
 ADD = 0b10100000
+CMP = 0b10100111
+JMP = 0B01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 
 class CPU:
     """Main CPU class."""
@@ -21,8 +25,13 @@ class CPU:
         self.pc = 0
         self.stack_pointer = self.reg[7]
         self.reg[7] = self.ram[0xf4]
+            
+        self.FL = [0] * 8
+        self.equal_flag = self.FL[7]
+        self.less_than_flag = self.FL[5]
+        self.greater_than_flag = self.FL[6]
+      
         self.branchtable = {}
-        # self.branchtable[HLT] = self.hlt
         self.branchtable[LDI] = self.ldi
         self.branchtable[PRN] = self.prn
         self.branchtable[MUL] = self.mul
@@ -31,6 +40,10 @@ class CPU:
         self.branchtable[CALL] = self.call
         self.branchtable[RET] = self.ret
         self.branchtable[ADD] = self.add
+        self.branchtable[CMP] = self.CMP
+        self.branchtable[JMP] = self.jmp
+        self.branchtable[JEQ] = self.jeq
+        self.branchtable[JNE] = self.jne
         
         
 
@@ -64,6 +77,24 @@ class CPU:
             #multiply the two registers together and store the answer in rega
             print('mulllll')
             self.reg[reg_a] *= self.reg[reg_b]
+            self.pc += 3
+        elif op == "CMP":
+            
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.equal_flag = 1
+                self.less_than_flag = 0
+                self.greater_than_flag = 0
+
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.less_than_flag = 1
+                self.greater_than_flag = 0
+                self.equal_flag = 0
+
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.greater_than_flag = 1
+                self.less_than_flag = 0
+                self.equal_flag = 0
+
             self.pc += 3
         #elif op == "SUB": etc
         else:
@@ -126,10 +157,9 @@ class CPU:
         self.alu('ADD', register_a, register_b)
     
     def call(self, register, operand_b):
-    #The address of the instruction directly after CALL is pushed onto the stack. This allows us to return to where we left off when the subroutine finishes executing.
         self.stack_pointer -= 1
         self.ram[self.stack_pointer] = self.pc + 2
-    #The PC is set to the address stored in the given register. We jump to that location in RAM and execute the first instruction in the subroutine. The PC can move forward or backwards from its current location.
+    
         self.pc = self.reg[register]
 
     def ret(self, operand_a, operand_b):
@@ -140,7 +170,29 @@ class CPU:
 
         self.pc = value
     
+    def CMP(self, register_a, register_b):
+        self.alu("CMP", register_a, register_b)
     
+    def jmp(self, register, operand_b):
+        address = self.reg[register]
+        self.pc = address
+    
+    def jeq(self, register, operand_b):
+        if self.equal_flag == 1:
+            address = self.reg[register]
+            self.pc = address
+        else:
+            self.pc += 2
+
+    def jne(self, register, operand_b):
+        if self.equal_flag == 0:
+            address = self.reg[register]
+            self.pc = address
+        else:
+            self.pc += 2
+
+        
+
 
 
 

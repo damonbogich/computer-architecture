@@ -102,7 +102,10 @@ while running:
         # Push return addr on stack
         push_value(return_addr)
         # Get the value from the operand reg
+        reg_num = memory[pc + 1]
+        value = registers[reg_num]
         # Set the pc to that value
+        pc = value
     else:
         print(f"Unknown instruction {ir}")
         sys.exit(3)
