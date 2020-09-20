@@ -25,7 +25,8 @@ class CPU:
         self.pc = 0
         self.stack_pointer = self.reg[7]
         self.reg[7] = self.ram[0xf4]
-            
+
+        #Flag register and variables for each flag
         self.FL = [0] * 8
         self.equal_flag = self.FL[7]
         self.less_than_flag = self.FL[5]
@@ -79,7 +80,7 @@ class CPU:
             self.reg[reg_a] *= self.reg[reg_b]
             self.pc += 3
         elif op == "CMP":
-            
+            #compares values in both register and sets flags accordingly
             if self.reg[reg_a] == self.reg[reg_b]:
                 self.equal_flag = 1
                 self.less_than_flag = 0
@@ -174,10 +175,12 @@ class CPU:
         self.alu("CMP", register_a, register_b)
     
     def jmp(self, register, operand_b):
+        #sets pc to address stored in given register
         address = self.reg[register]
         self.pc = address
     
     def jeq(self, register, operand_b):
+        #sets pc to address in register if equal flag is "on"
         if self.equal_flag == 1:
             address = self.reg[register]
             self.pc = address
@@ -185,6 +188,7 @@ class CPU:
             self.pc += 2
 
     def jne(self, register, operand_b):
+        #sets pc to address in register if equal flag is "off"
         if self.equal_flag == 0:
             address = self.reg[register]
             self.pc = address
